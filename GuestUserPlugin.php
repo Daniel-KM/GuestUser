@@ -23,7 +23,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     );
 
     protected $_filters = array(
-        'public_navigation_admin_bar',
+        'public_navigation_main',
         'public_show_admin_bar',
         'guest_user_widgets',
         'admin_navigation_main'
@@ -360,7 +360,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function filterPublicShowAdminBar($show)
     {
-        return true;
+        return false;
     }
 
     public function filterAdminNavigationMain($navLinks)
@@ -370,37 +370,40 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         return $navLinks;
     }
 
-    public function filterPublicNavigationAdminBar($navLinks)
+    public function filterPublicNavigationMain($navLinks)
     {
         //Clobber the default admin link if user is guest
         $user = current_user();
         if($user) {
-            if($user->role == 'guest') {
-                unset($navLinks[1]);
-            }
-            $navLinks[0]['id'] = 'admin-bar-welcome';
-            $meLink = array('id'=>'guest-user-me',
-                'uri'=>url('guest-user/user/me'),
-                'label' => get_option('guest_user_dashboard_label')
+            $navLinks['GuestUserHead'] = array(
+                'id' => 'guest-user-head',
+                'label' => __('Welcome, %s', $user->name),
+                'uri' => url('#')
             );
-            $filteredLinks = apply_filters('guest_user_links' , array('guest-user-me'=>$meLink) );
-            $navLinks[0]['pages'] = $filteredLinks;
+            $navLinks['GuestUserHead']['pages'][] = array(
+                'id=' => 'guest-user-main',
+                'label' => get_option('guest_user_dashboard_label'),
+                'uri' => url('guest-user/user/me')
+            );
+            $navLinks['GuestUserHead']['pages'][] = array(
+                'id' => 'guest-user-logout',
+                'label' => __('Logout'),
+                'uri' => url('users/logout')
+            );
             return $navLinks;
         }
         $loginLabel = get_option('guest_user_login_text') ? get_option('guest_user_login_text') : __('Login');
         $registerLabel = get_option('guest_user_register_text') ? get_option('guest_user_register_text') : __('Register');
-        $navLinks = array(
-                'guest-user-login' => array(
-                    'id' => 'guest-user-login',
-                    'label' => $loginLabel,
-                    'uri' => url('guest-user/user/login')
-                ),
-                'guest-user-register' => array(
-                    'id' => 'guest-user-register',
-                    'label' => $registerLabel,
-                    'uri' => url('guest-user/user/register'),
-                    )
-                );
+        $navLinks['GuestUserLogin'] = array(
+            'id' => 'guest-user-login',
+            'label' => $loginLabel,
+            'uri' => url('guest-user/user/login')
+        );
+        $navLinks['GuestUserRegister'] = array(
+            'id' => 'guest-user-register',
+            'label' => $registerLabel,
+            'uri' => url('guest-user/user/register'),
+        );
         return $navLinks;
     }
 
