@@ -96,7 +96,7 @@ class GuestUser_Form_GuestUser extends Omeka_Form_User
         if (current_user()) {
             $submitLabel = __('Update');
         } else {
-            $submitLabel = get_option('guest_user_register_text') ?: __('Register');
+            $submitLabel = get_option('guest_user_register_text') ? get_option('guest_user_register_text') : __('Register');
         }
         $this->addElement('submit', 'submit', array('label' => $submitLabel));
     }
