@@ -2,12 +2,16 @@
 
 class GuestUser_Form_GuestUser extends Omeka_Form_User
 {
+    private $_userFields;
+
     /**
      * Initialize the form.
      */
     public function init()
     {
         parent::init();
+
+        $additionalFields = $this->_getAdditionalFields();
 
         // Need to remove submit to add in new elements.
         $this->removeElement('submit');
@@ -57,6 +61,19 @@ class GuestUser_Form_GuestUser extends Omeka_Form_User
             )
         );
 
+        // Add each additional fields, if any.
+        // The options like "required" can be set in the theme.
+        foreach ($additionalFields as $name => $label) {
+            $this->addElement('text', $name, array(
+                'label' => $label,
+                // 'description' => $description,
+                'value' => isset($this->_userFields[$name]) ? $this->_userFields[$name] : '',
+                'size' => '30',
+                // 'required' => true,
+                // 'validators' => array(),
+            ));
+        }
+
         if (Omeka_Captcha::isConfigured() && (get_option('guest_user_recaptcha') == 1)) {
             $this->addElement('captcha', 'captcha',
                 array(
@@ -74,5 +91,32 @@ class GuestUser_Form_GuestUser extends Omeka_Form_User
             $submitLabel = get_option('guest_user_register_text') ?: __('Register');
         }
         $this->addElement('submit', 'submit', array('label' => $submitLabel));
+    }
+
+    /**
+     * Get additional fields if any.
+     *
+     * @return array An associative array of the name and the label of
+     * additional fields.
+     */
+    protected function _getAdditionalFields()
+    {
+        $fields = array();
+        $options = get_option('guest_user_fields');
+        if (!empty($options)) {
+            $fields = json_decode($options, true);
+        }
+        return $fields;
+    }
+
+    /**
+     * Set values of user fields if any.
+     *
+     * @return array An associative array of the name and the value of each
+     * additional field.
+     */
+    public function setUserFields($userFields)
+    {
+        $this->_userFields = $userFields;
     }
 }

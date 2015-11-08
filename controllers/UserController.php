@@ -34,6 +34,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
         if (!$this->getRequest()->isPost() || !$form->isValid($_POST)) {
             return;
         }
+        $userFields = $this->_getAdditionalFieldsFromPost();
         $user->role = 'guest';
         if($openRegistration || $instantAccess) {
             $user->active = true;
@@ -42,6 +43,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
         $user->setPostData($_POST);
         try {
             if ($user->save()) {
+                $this->_saveAdditionalFields($user, $userFields);
                 $token = $this->_createToken($user);
                 $this->_sendConfirmationEmail($user, $token); //confirms that they registration request is legit
                 if($instantAccess) {
@@ -114,10 +116,14 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
             return;
         }
 
+        $userFields = $this->_getAdditionalFieldsFromPost();
+
         $user->setPassword($_POST['new_password']);
         $user->setPostData($_POST);
+
         try {
             $user->save($_POST);
+            $this->_saveAdditionalFields($user, $userFields);
         } catch (Omeka_Validator_Exception $e) {
             $this->flashValidationErrors($e);
         }
@@ -163,7 +169,42 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
     protected function _getForm($options)
     {
         require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'GuestUser.php';
+        $options['userFields'] = $this->_loadAdditionalFields($options['user']);
         return new GuestUser_Form_GuestUser($options);
+    }
+
+    protected function _getAdditionalFieldsFromPost()
+    {
+        $additionalFields = json_decode(get_option('guest_user_fields'), true);
+        $userFields = array_fill_keys(array_keys($additionalFields), '');
+        foreach ($userFields as $name => &$value) {
+            $fieldValue = trim($_POST[$name]);
+            if (strlen($fieldValue) > 0) {
+                $value = $fieldValue;
+            }
+        }
+        return $userFields;
+    }
+
+    protected function _loadAdditionalFields($user)
+    {
+        $db = $this->_helper->db;
+        $details = $db->getTable('GuestUserDetail')->findByUser($user);
+        return empty($details)
+            ? array()
+            : $details->getValues();
+    }
+
+    protected function _saveAdditionalFields($user, $userFields)
+    {
+        $db = $this->_helper->db;
+        $details = $db->getTable('GuestUserDetail')->findByUser($user);
+        if (empty($details)) {
+            $details = new GuestUserDetail();
+            $details->user_id = $user->id;
+        }
+        $details->setValues($userFields);
+        $details->save();
     }
 
     protected function _sendConfirmedEmail($user)

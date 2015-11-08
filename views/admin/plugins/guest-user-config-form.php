@@ -75,6 +75,25 @@
             </div>
         </div>
     </div>
+
+    <div class="field">
+        <div class="two columns alpha">
+            <?php echo $this->formLabel('guest_user_fields',
+                __('Additionnal Fields')); ?>
+        </div>
+        <div class="inputs five columns omega" >
+            <p class='explanation'>
+                <?php echo __('Add additionnal fields, one by line, with name and label, that user should complete to register.'); ?>
+                <?php echo __('The label should be separated from the field name by a ":".'); ?>
+                <?php echo __('Names must not be "id", "user_id", "name", "username", "email", "role", "password" or any other names set by default by Omeka.'); ?>
+            </p>
+            <div class="input-block">
+                <?php
+                    echo $this->formTextarea('guest_user_fields', $fields, array('rows' => 5, 'placeholder' => 'Additionnal fields like "phone: Your Phone"'));
+                ?>
+            </div>
+        </div>
+    </div>
 </fieldset>
 
 <fieldset id="fieldset-guest-user-mode">

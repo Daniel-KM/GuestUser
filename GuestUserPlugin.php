@@ -9,7 +9,9 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     protected $_hooks = array(
         'initialize',
         'install',
+        'upgrade',
         'uninstall',
+        'uninstall_message',
         'config',
         'config_form',
         'define_acl',
@@ -40,6 +42,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         'guest_user_open' => false,
         'guest_user_instant_access' => false,
         'guest_user_recaptcha' => false,
+        'guest_user_fields' => '[]',
     );
 
     /**
@@ -70,7 +73,16 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
                   PRIMARY KEY (`id`)
                 ) ENGINE=MyISAM CHARSET=utf8 COLLATE=utf8_unicode_ci;
                 ";
+        $db->query($sql);
 
+        $sql = "
+            CREATE TABLE IF NOT EXISTS `$db->GuestUserDetail` (
+                `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                `user_id` int(10) unsigned NOT NULL,
+                `values` text COLLATE utf8_unicode_ci NOT NULL,
+                PRIMARY KEY (`id`),
+                INDEX (`user_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
         $db->query($sql);
 
         //if plugin was uninstalled/reinstalled, reactivate the guest users
@@ -92,6 +104,25 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $this->_installOptions();
     }
 
+    public function hookUpgrade($args)
+    {
+        $oldVersion = $args['old_version'];
+        $newVersion = $args['new_version'];
+        $db = $this->_db;
+
+        if (version_compare($oldVersion, '1.2', '<')) {
+            $sql = "
+                CREATE TABLE IF NOT EXISTS `$db->GuestUserDetail` (
+                    `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id` int(10) unsigned NOT NULL,
+                    `values` text COLLATE utf8_unicode_ci NOT NULL,
+                    PRIMARY KEY (`id`),
+                    INDEX (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+            $db->query($sql);
+        }
+    }
+
     public function hookUninstall($args)
     {
         //deactivate the guest users
@@ -103,8 +134,17 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
 
         $db = get_db();
         $db->query("DROP TABLE IF EXISTS `$db->GuestUserTokens`");
+        $db->query("DROP TABLE IF EXISTS `$db->GuestUserDetail`");
 
         $this->_uninstallOptions();
+    }
+
+    /**
+     * Display the uninstall message.
+     */
+    public function hookUninstallMessage()
+    {
+        echo __('%sWarning%s: This will remove all the guest users data added by this plugin.%s', '<p><strong>', '</strong>', '</p>');
     }
 
     public function hookDefineAcl($args)
@@ -121,8 +161,10 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     public function hookConfigForm($args)
     {
         $view = get_view();
+        $fields = $this->_getJsonFields();
         echo $view->partial(
-            'plugins/guest-user-config-form.php'
+            'plugins/guest-user-config-form.php',
+            array('fields' => $fields)
         );
     }
 
@@ -135,10 +177,55 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     {
         $post = $args['post'];
         foreach ($this->_options as $optionKey => $optionValue) {
+            if ($optionKey == 'guest_user_fields') {
+                $post[$optionKey] = $this->_setJsonFields($post[$optionKey]);
+            }
             if (isset($post[$optionKey])) {
                 set_option($optionKey, $post[$optionKey]);
             }
         }
+    }
+
+    protected function _getJsonFields()
+    {
+        $fieldsString = '';
+
+        $options = get_option('guest_user_fields');
+        if (!empty($options)) {
+            $options = json_decode($options, true);
+            foreach ($options as $name => $label) {
+                $fieldsString .= $name . ': ' . $label . PHP_EOL;
+            }
+        }
+
+        return $fieldsString;
+    }
+
+    protected function _setJsonFields($string)
+    {
+        $values = array_filter(array_map('trim', explode(PHP_EOL, $string)));
+
+        $fields = array();
+        foreach ($values as $value) {
+            $pos = strpos($value, ':');
+            if (empty($pos)) {
+                continue;
+            }
+            $name = trim(substr($value, 0, $pos));
+            $label = trim(substr($value, $pos + 1));
+            if (empty($name) || empty($label)) {
+                continue;
+            }
+            if (in_array($name, array(
+                   'id', 'name', 'username', 'email', 'role', 'password', 'salt', 'active',
+                   'user_id', 'token', 'created', 'confirmed',
+               ))) {
+                continue;
+            }
+            $fields[$name] = $label;
+        }
+
+        return json_encode($fields);
     }
 
     public function hookAdminThemeHeader($args)
