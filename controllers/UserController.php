@@ -162,67 +162,8 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
 
     protected function _getForm($options)
     {
-        $form = new Omeka_Form_User($options);
-        //need to remove submit so I can add in new elements
-        $form->removeElement('submit');
-        $form->addElement('password', 'new_password',
-            array(
-                    'label'         => __('Password'),
-                    'required'      => true,
-                    'class'         => 'textinput',
-                    'validators'    => array(
-                        array('validator' => 'NotEmpty', 'breakChainOnFailure' => true, 'options' =>
-                            array(
-                                'messages' => array(
-                                    'isEmpty' => __("New password must be entered.")
-                                )
-                            )
-                        ),
-                        array(
-                            'validator' => 'Confirmation',
-                            'options'   => array(
-                                'field'     => 'new_password_confirm',
-                                'messages'  => array(
-                                    Omeka_Validate_Confirmation::NOT_MATCH => __('New password must be typed correctly twice.')
-                                )
-                             )
-                        ),
-                        array(
-                            'validator' => 'StringLength',
-                            'options'   => array(
-                                'min' => User::PASSWORD_MIN_LENGTH,
-                                'messages' => array(
-                                    Zend_Validate_StringLength::TOO_SHORT => __("New password must be at least %min% characters long.")
-                                )
-                            )
-                        )
-                    )
-            )
-        );
-        $form->addElement('password', 'new_password_confirm',
-                        array(
-                                'label'         => __('Password again for match'),
-                                'required'      => true,
-                                'class'         => 'textinput',
-                                'errorMessages' => array(__('New password must be typed correctly twice.'))
-                        )
-        );
-        if(Omeka_Captcha::isConfigured() && (get_option('guest_user_recaptcha') == 1)) {
-            $form->addElement('captcha', 'captcha',  array(
-                'class' => 'hidden',
-                'style' => 'display: none;',
-                'label' => __("Please verify you're a human"),
-                'type' => 'hidden',
-                'captcha' => Omeka_Captcha::getCaptcha()
-            ));
-        }
-        if (current_user()) {
-            $submitLabel = __('Update');
-        } else {
-            $submitLabel = get_option('guest_user_register_text') ? get_option('guest_user_register_text') : __('Register');
-        }
-        $form->addElement('submit', 'submit', array('label' => $submitLabel));
-        return $form;
+        require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'GuestUser.php';
+        return new GuestUser_Form_GuestUser($options);
     }
 
     protected function _sendConfirmedEmail($user)

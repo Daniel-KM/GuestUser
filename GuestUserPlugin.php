@@ -7,16 +7,16 @@ include(FORM_DIR . '/User.php');
 class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
 {
     protected $_hooks = array(
+        'initialize',
         'install',
         'uninstall',
+        'config',
+        'config_form',
         'define_acl',
         'public_header',
         'public_head',
         'admin_theme_header',
-        'config',
-        'config_form',
         'before_save_user',
-        'initialize',
         'users_browse_sql'
     );
 
@@ -27,6 +27,20 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         'admin_navigation_main'
     );
 
+    /**
+     * @var array This plugin's options.
+     */
+    protected $_options = array(
+        'guest_user_skip_activation_email' => false,
+        'guest_user_login_text' => 'Login',
+        'guest_user_register_text' => 'Register',
+        'guest_user_dashboard_label' => 'My Account',
+        'guest_user_capabilities' => '',
+        'guest_user_short_capabilities' => '',
+        'guest_user_open' => false,
+        'guest_user_instant_access' => false,
+        'guest_user_recaptcha' => false,
+    );
 
     /**
      * Add the translations.
@@ -71,9 +85,11 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
             set_option('guest_user_skip_activation_email', false);
         }
 
-        set_option('guest_user_login_text', __('Login'));
-        set_option('guest_user_register_text', __('Register'));
-        set_option('guest_user_dashboard_label', __('My Account'));
+        $this->_options['guest_user_login_text'] = __('Login');
+        $this->_options['guest_user_register_text'] = __('Register');
+        $this->_options['guest_user_dashboard_label'] = __('My Account');
+
+        $this->_installOptions();
     }
 
     public function hookUninstall($args)
@@ -84,6 +100,11 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
             $user->active = false;
             $user->save();
         }
+
+        $db = get_db();
+        $db->query("DROP TABLE IF EXISTS `$db->GuestUserTokens`");
+
+        $this->_uninstallOptions();
     }
 
     public function hookDefineAcl($args)
@@ -92,17 +113,32 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $acl->addRole(new Zend_Acl_Role('guest'), null);
     }
 
+    /**
+     * Shows plugin configuration page.
+     *
+     * @return void
+     */
+    public function hookConfigForm($args)
+    {
+        $view = get_view();
+        echo $view->partial(
+            'plugins/guest-user-config-form.php'
+        );
+    }
+
+    /**
+     * Processes the configuration form.
+     *
+     * @return void
+     */
     public function hookConfig($args)
     {
         $post = $args['post'];
-        foreach($post as $option=>$value) {
-            set_option($option, $value);
+        foreach ($this->_options as $optionKey => $optionValue) {
+            if (isset($post[$optionKey])) {
+                set_option($optionKey, $post[$optionKey]);
+            }
         }
-    }
-
-    public function hookConfigForm()
-    {
-        include 'config_form.php';
     }
 
     public function hookAdminThemeHeader($args)
@@ -263,7 +299,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $mail->addHeader('X-Mailer', 'PHP/' . phpversion());
         $mail->send();
     }
-    
+
     public static function guestUserWidget($widget)
     {
         if(is_array($widget)) {
