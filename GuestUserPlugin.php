@@ -164,7 +164,9 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $fields = $this->_getJsonFields();
         echo $view->partial(
             'plugins/guest-user-config-form.php',
-            array('fields' => $fields)
+            array(
+                'fields' => $fields,
+            )
         );
     }
 
@@ -178,7 +180,8 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $post = $args['post'];
         foreach ($this->_options as $optionKey => $optionValue) {
             if ($optionKey == 'guest_user_fields') {
-                $post[$optionKey] = $this->_setJsonFields($post[$optionKey]);
+                $guestUserFields = $this->_setJsonFields($post[$optionKey]);
+                $post[$optionKey] = $guestUserFields;
             }
             if (isset($post[$optionKey])) {
                 set_option($optionKey, $post[$optionKey]);
@@ -193,8 +196,19 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         $options = get_option('guest_user_fields');
         if (!empty($options)) {
             $options = json_decode($options, true);
-            foreach ($options as $name => $label) {
-                $fieldsString .= $name . ': ' . $label . PHP_EOL;
+            $defaultParams = array(
+                'required' => 'false',
+                'type' => 'text',
+                'label' => '',
+            );
+            foreach ($options as $fieldName => $fieldParams) {
+                if (!is_array($fieldParams)) {
+                    $fieldParams = array(
+                        'label' => $fieldParams,
+                    );
+                }
+                $fieldParams = array_merge($defaultParams, $fieldParams);
+                $fieldsString .= $fieldName . ' : ' . ($fieldParams['required'] == 'true' ? 'true' : 'false') . ' : ' . $fieldParams['type'] . ' : ' . $fieldParams['label'] . PHP_EOL;
             }
         }
 
@@ -212,8 +226,8 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
                 continue;
             }
             $name = trim(substr($value, 0, $pos));
-            $label = trim(substr($value, $pos + 1));
-            if (empty($name) || empty($label)) {
+            $params = trim(substr($value, $pos + 1));
+            if (empty($name) || empty($params)) {
                 continue;
             }
             if (in_array($name, array(
@@ -222,7 +236,45 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
                ))) {
                 continue;
             }
-            $fields[$name] = $label;
+
+            $pos = strpos($params, ':');
+            if (empty($pos)) {
+                continue;
+            }
+            $required = trim(substr($params, 0, $pos));
+            $params = trim(substr($params, $pos + 1));
+            if (empty($required) || empty($params)) {
+                continue;
+            }
+
+            if (!in_array($required, array(
+                   'false', 'true',
+               ))) {
+                continue;
+            }
+            $required = $required === 'true';
+
+            $pos = strpos($params, ':');
+            if (empty($pos)) {
+                continue;
+            }
+            $type = trim(substr($params, 0, $pos));
+            $label = trim(substr($params, $pos + 1));
+            if (empty($type) || empty($label)) {
+                continue;
+            }
+
+            if (!in_array($type, array(
+                   'text', 'textarea',
+               ))) {
+                continue;
+            }
+
+            $fields[$name] = array(
+                'required' => $required,
+                'type' => $type,
+                'label' => $label,
+            );
         }
 
         return json_encode($fields);

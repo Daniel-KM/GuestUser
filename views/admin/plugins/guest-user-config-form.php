@@ -83,13 +83,13 @@
         </div>
         <div class="inputs five columns omega" >
             <p class='explanation'>
-                <?php echo __('Add additionnal fields, one by line, with name and label, that user should complete to register.'); ?>
-                <?php echo __('The label should be separated from the field name by a ":".'); ?>
+                <?php echo __('Add additionnal fields, one by line, that user may or must complete to register.'); ?>
+                <?php echo __('The format is: "name : required (true or false) : type of field (text or textarea) : label to display".'); ?>
                 <?php echo __('Names must not be "id", "user_id", "name", "username", "email", "role", "password" or any other names set by default by Omeka.'); ?>
             </p>
             <div class="input-block">
                 <?php
-                    echo $this->formTextarea('guest_user_fields', $fields, array('rows' => 5, 'placeholder' => 'Additionnal fields like "phone: Your Phone"'));
+                    echo $this->formTextarea('guest_user_fields', $fields, array('rows' => 5, 'placeholder' => 'Fields like "phone : false : text : Your Phone"'));
                 ?>
             </div>
         </div>

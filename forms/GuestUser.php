@@ -62,14 +62,22 @@ class GuestUser_Form_GuestUser extends Omeka_Form_User
         );
 
         // Add each additional fields, if any.
-        // The options like "required" can be set in the theme.
-        foreach ($additionalFields as $name => $label) {
-            $this->addElement('text', $name, array(
-                'label' => $label,
+        // Other options can be set in the theme.
+        $defaultParams = array(
+            'required' => false,
+            'type' => 'text',
+            'label' => '',
+        );
+        foreach ($additionalFields as $fieldName => $fieldParams) {
+            $fieldParams = array_merge($defaultParams, $fieldParams);
+            $this->addElement($fieldParams['type'], $fieldName, array(
+                'label' => $fieldParams['label'],
                 // 'description' => $description,
-                'value' => isset($this->_userFields[$name]) ? $this->_userFields[$name] : '',
+                'value' => isset($this->_userFields[$fieldName]) ? $this->_userFields[$fieldName] : '',
                 'size' => '30',
-                // 'required' => true,
+                // Used only for textarea.
+                'rows' => 5,
+                'required' => $fieldParams['required'],
                 // 'validators' => array(),
             ));
         }
