@@ -8,6 +8,17 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
         $this->_auth = $this->getInvokeArg('bootstrap')->getResource('Auth');
     }
 
+    /**
+     * The browse action.
+     */
+    public function browseAction()
+    {
+        parent::browseAction();
+
+        $this->view->usersDetails = $this->_helper->db->getTable('GuestUserDetail')
+            ->findByUsers($this->view->users);
+    }
+
     public function loginAction()
     {
         $session = new Zend_Session_Namespace;
@@ -189,7 +200,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
     protected function _loadAdditionalFields($user)
     {
         $db = $this->_helper->db;
-        $details = $db->getTable('GuestUserDetail')->findByUser($user);
+        $details = $db->getTable('GuestUserDetail')->findByUsers($user);
         return empty($details)
             ? array()
             : $details->getValues();
@@ -198,7 +209,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
     protected function _saveAdditionalFields($user, $userFields)
     {
         $db = $this->_helper->db;
-        $details = $db->getTable('GuestUserDetail')->findByUser($user);
+        $details = $db->getTable('GuestUserDetail')->findByUsers($user);
         if (empty($details)) {
             $details = new GuestUserDetail();
             $details->user_id = $user->id;

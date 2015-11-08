@@ -88,6 +88,7 @@ echo flash();
         </tr>
     </thead>
     <tbody>
+    <?php $userFields = json_decode(get_option('guest_user_fields'), true); ?>
     <?php foreach( $users as $key => $user ): ?>
         <tr class="<?php if (current_user()->id == $user->id) echo 'current-user '; ?><?php if($key%2==1) echo 'even'; else echo 'odd'; ?><?php if(!$user->active): ?> inactive<?php endif; ?>">
             <td>
@@ -109,6 +110,22 @@ echo flash();
             <td><?php echo html_escape($user->email); ?></td>
             <td><span class="<?php echo html_escape($user->role); ?>"><?php echo html_escape(__(Inflector::humanize($user->role))); ?></span></td>
         </tr>
+        <?php if ($userFields): ?>
+        <tr><td colspan="5">
+             <?php if (isset($usersDetails[$user->id])):
+                 $userDetails = $usersDetails[$user->id]->getValues(); ?>
+             <ul>
+                <?php foreach ($userFields as $fieldName => $fieldParams):
+                    $userDetail = isset($userDetails[$fieldName]) ? $userDetails[$fieldName] : '';
+                    echo '<li><em>' . ucfirst($fieldName) . '</em>: ' . $userDetail . '</li>';
+                endforeach; ?>
+            </ul>
+            <?php else:
+                echo __('No details.');
+            endif;
+            ?>
+        </td></tr>
+        <?php endif; ?>
     <?php endforeach; ?>
     </tbody>
 </table>

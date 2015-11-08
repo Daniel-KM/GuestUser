@@ -7,16 +7,41 @@ class Table_GuestUserDetail extends Omeka_Db_Table
     protected $_target = 'GuestUserDetail';
 
     /**
-     * Get the object for the specified user.
+     * Get the details for the specified user or list of user.
      *
-     * @param User|integer $user
-     * @return GuestUserDetail|null
+     * @param User|array|integer $users One or multiple user.
+     * @return GuestUserDetail|array|null Return an associative array when
+     * multiple user are requested.
      */
-    public function findByUser($user)
+    public function findByUsers($users)
     {
         $params = array();
-        $params['user_id'] = (integer) (is_object($user) ? $user->id : $user);
-        $result = $this->findBy($params, 1);
-        return $result ? reset($result) : null;
+
+        if (!is_array($users)) {
+            $one = true;
+            $users = array($users);
+        }
+        // Multiple users.
+        else {
+            $one = false;
+        }
+
+        $params['user_id'] = array_map(
+            function ($value) {
+                 return (integer) ((is_object($value)) ? $value->id : $value);
+            },
+            $users);
+
+        $result = $this->findBy($params);
+        if ($one) {
+            return $result ? reset($result) : null;
+        }
+
+        // Return details by user.
+        $details = array();
+        foreach ($result as $value) {
+            $details[$value->user_id] = $value;
+        }
+        return $details;
     }
 }
