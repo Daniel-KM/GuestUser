@@ -63,7 +63,8 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
                     $authAdapter->setIdentity($user->username)->setCredential($_POST['new_password']);
                     $authResult = $this->_auth->authenticate($authAdapter);
                     if (!$authResult->isValid()) {
-                        if ($log = $this->_getLog()) {
+                        $log = $this->_getLog();
+                        if ($log) {
                             $ip = $this->getRequest()->getClientIp();
                             $log->info(__("Failed login attempt from %s", $ip));
                         }
@@ -90,7 +91,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
                     $this->_helper->flashMessenger($message, 'success');
                 }
             }
-        } catch (Omeka_Validator_Exception $e) {
+        } catch (Omeka_Validate_Exception $e) {
             $this->flashValidationErrors($e);
         }
     }
@@ -135,7 +136,7 @@ class GuestUser_UserController extends Omeka_Controller_AbstractActionController
         try {
             $user->save($_POST);
             $this->_saveAdditionalFields($user, $userFields);
-        } catch (Omeka_Validator_Exception $e) {
+        } catch (Omeka_Validate_Exception $e) {
             $this->flashValidationErrors($e);
         }
     }
