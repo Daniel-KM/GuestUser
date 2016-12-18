@@ -26,7 +26,7 @@
                 <?php echo __('Add a shorter version to use as a dropdown from the user bar. If empty, no dropdown will appear.'); ?>
             </p>
             <div class="input-block">
-                <?php echo $this->formTextarea('guest_user_short_capabilities', get_option('guest_user_capabilities'), array('rows' => 3)); ?>
+                <?php echo $this->formTextarea('guest_user_short_capabilities', get_option('guest_user_short_capabilities'), array('rows' => 3)); ?>
             </div>
         </div>
     </div>
