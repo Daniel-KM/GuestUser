@@ -368,7 +368,20 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function filterPublicShowAdminBar($show)
     {
-        return (boolean) get_option('guest_user_menu_bar_admin');
+        if (get_option('guest_user_menu_bar_admin')) {
+            return true;
+        }
+        $user = current_user();
+        if (!$user) {
+            return false;
+        }
+        // If the bar is not displayed, it is nevertheless displayed when the
+        // role of the user is one of the core ones or one of the plugin
+        // "MoreUserRoles".
+        return in_array($user->role, array(
+            'super', 'admin', 'researcher', 'contributor',
+            'editor', 'author',
+        ));
     }
 
     public function filterAdminNavigationMain($navLinks)
@@ -458,9 +471,10 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     public function filterGuestUserWidgets($widgets)
     {
         $widget = array('label'=> __('My Account'));
-        $passwordUrl = url('guest-user/user/change-password');
+        $user = current_user();
         $accountUrl = url('guest-user/user/update-account');
         $html = "<ul>";
+        $html .= '<li>' . __('Logged as %s', '<strong>' . $user->name . '</strong>') . '</li>';
         $html .= "<li><a href='$accountUrl'>" . __("Update account info and password") . "</a></li>";
         $html .= "</ul>";
         $widget['content'] = $html;
