@@ -380,12 +380,11 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
             }
             $navLinks[0]['id'] = 'admin-bar-welcome';
             $meLink = array('id'=>'guest-user-me',
-                    'uri'=>url('guest-user/user/me'),
-                    'label' => get_option('guest_user_dashboard_label')
+                'uri'=>url('guest-user/user/me'),
+                'label' => get_option('guest_user_dashboard_label')
             );
             $filteredLinks = apply_filters('guest_user_links' , array('guest-user-me'=>$meLink) );
             $navLinks[0]['pages'] = $filteredLinks;
-
             return $navLinks;
         }
         $loginLabel = get_option('guest_user_login_text') ? get_option('guest_user_login_text') : __('Login');
@@ -442,13 +441,11 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     public static function guestUserWidget($widget)
     {
         if(is_array($widget)) {
-        $html = "<h2 class='guest-user-widget-label'>" . $widget['label'] . "</h2>";
-        $html .= $widget['content'];
-        return $html;
-    } else {
-        return $widget;
-    }
+            $html = "<h2 class='guest-user-widget-label'>" . $widget['label'] . "</h2>";
+            $html .= $widget['content'];
+            return $html;
+        } else {
+            return $widget;
+        }
     }
 }
-
-?>
