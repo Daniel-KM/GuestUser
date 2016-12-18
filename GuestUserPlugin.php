@@ -23,6 +23,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
     );
 
     protected $_filters = array(
+        'public_navigation_admin_bar',
         'public_navigation_main',
         'public_show_admin_bar',
         'guest_user_widgets',
@@ -34,6 +35,8 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
      */
     protected $_options = array(
         'guest_user_skip_activation_email' => false,
+        'guest_user_menu_bar_admin' => true,
+        'guest_user_menu_bar_main' => false,
         'guest_user_login_text' => 'Login',
         'guest_user_register_text' => 'Register',
         'guest_user_dashboard_label' => 'My Account',
@@ -120,6 +123,11 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
                     INDEX (`user_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
             $db->query($sql);
+        }
+
+        if (version_compare($oldVersion, '1.2.1', '<')) {
+            set_option('guest_user_menu_bar_admin', $this->_options['guest_user_menu_bar_admin']);
+            set_option('guest_user_menu_bar_main', $this->_options['guest_user_menu_bar_main']);
         }
     }
 
@@ -360,7 +368,7 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function filterPublicShowAdminBar($show)
     {
-        return false;
+        return (boolean) get_option('guest_user_menu_bar_admin');
     }
 
     public function filterAdminNavigationMain($navLinks)
@@ -370,28 +378,68 @@ class GuestUserPlugin extends Omeka_Plugin_AbstractPlugin
         return $navLinks;
     }
 
-    public function filterPublicNavigationMain($navLinks)
+    public function filterPublicNavigationAdminBar($navLinks)
     {
         //Clobber the default admin link if user is guest
         $user = current_user();
         if($user) {
-            $navLinks['GuestUserHead'] = array(
-                'id' => 'guest-user-head',
-                'label' => __('Welcome, %s', $user->name),
-                'uri' => url('#')
+            if($user->role == 'guest') {
+                    unset($navLinks[1]);
+                }
+                $navLinks[0]['id'] = 'admin-bar-welcome';
+                $meLink = array('id'=>'guest-user-me',
+                        'uri'=>url('guest-user/user/me'),
+                        'label' => get_option('guest_user_dashboard_label')
             );
-            $navLinks['GuestUserHead']['pages'][] = array(
-                'id=' => 'guest-user-main',
+            $filteredLinks = apply_filters('guest_user_links' , array('guest-user-me'=>$meLink) );
+            $navLinks[0]['pages'] = $filteredLinks;
+            return $navLinks;
+        }
+        return $this->_filterPublicNavigation($navLinks);
+    }
+
+    public function filterPublicNavigationMain($navLinks)
+    {
+        if (!get_option('guest_user_menu_bar_main')) {
+            return $navLinks;
+        }
+
+        $user = current_user();
+        if($user) {
+            $meLink = array(
+                'id' => 'guest-user-me',
                 'label' => get_option('guest_user_dashboard_label'),
-                'uri' => url('guest-user/user/me')
+                'uri' => url('guest-user/user/me'),
             );
-            $navLinks['GuestUserHead']['pages'][] = array(
+            $filteredLinks = apply_filters('guest_user_links', array('guest-user-me' => $meLink) );
+            $filteredLinks['guest-user-logout'] = array(
                 'id' => 'guest-user-logout',
                 'label' => __('Logout'),
                 'uri' => url('users/logout')
             );
+            $navLinks['GuestUserHead'] = array(
+                'id' => 'guest-user-head',
+                // The real name cannot be used because of filters.
+                // 'label' => __('Welcome, %s', $user->name),
+                'label' => get_option('guest_user_dashboard_label') ?: __('My account'),
+                // The uri cannot be the same as a sub menu.
+                // 'uri' => url('guest-user/user/me'),
+                'uri' => url('#'),
+                'pages' => $filteredLinks,
+            );
             return $navLinks;
         }
+        return $this->_filterPublicNavigation($navLinks);
+    }
+
+    /**
+     * Helper to filter navigation links.
+     *
+     * @param array $navLinks
+     * @return array
+     */
+    protected function _filterPublicNavigation($navLinks)
+    {
         $loginLabel = get_option('guest_user_login_text') ? get_option('guest_user_login_text') : __('Login');
         $registerLabel = get_option('guest_user_register_text') ? get_option('guest_user_register_text') : __('Register');
         $navLinks['GuestUserLogin'] = array(

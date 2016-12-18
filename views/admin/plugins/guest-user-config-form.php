@@ -18,6 +18,36 @@
 
     <div class="field">
         <div class="two columns alpha">
+            <?php echo $this->formLabel('guest_user_menu_bar_admin',
+                __('Display menu in admin bar')); ?>
+        </div>
+        <div class="inputs five columns omega">
+            <p class="explanation">
+                <?php echo __('If checked, the guest user menu will be displayed in the admin bar.'); ?>
+            </p>
+            <div class="input-block">
+                <?php echo $this->formCheckbox('guest_user_menu_bar_admin', true, array('checked' => (boolean) get_option('guest_user_menu_bar_admin'))); ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="two columns alpha">
+            <?php echo $this->formLabel('guest_user_menu_bar_main',
+                __('Display menu in main bar')); ?>
+        </div>
+        <div class="inputs five columns omega">
+            <p class="explanation">
+                <?php echo __('If checked, the guest user menu will be displayed in the main bar.'); ?>
+            </p>
+            <div class="input-block">
+                <?php echo $this->formCheckbox('guest_user_menu_bar_main', true, array('checked' => (boolean) get_option('guest_user_menu_bar_main'))); ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="two columns alpha">
             <?php echo $this->formLabel('guest_user_short_capabilities',
                 __('Short Registration Features')); ?>
         </div>

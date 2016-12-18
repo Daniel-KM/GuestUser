@@ -7,9 +7,11 @@ echo head(array('title' => $pageTitle));
 
 <?php echo flash(); ?>
 
+<div id="primary">
 <?php foreach($widgets as $index=>$widget): ?>
 <div class='guest-user-widget <?php if($index & 1): ?>guest-user-widget-odd <?php else:?>guest-user-widget-even<?php endif;?>'>
 <?php echo GuestUserPlugin::guestUserWidget($widget); ?>
 </div>
 <?php endforeach; ?>
+</div>
 <?php echo foot(); ?>
