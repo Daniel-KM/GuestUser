@@ -9,7 +9,10 @@ class GuestUserToken extends Omeka_Record_AbstractRecord
     public $created;
     public $confirmed;
 
-    protected function beforeSave()
+    /**
+     * Executes before the record is saved.
+     */
+    protected function beforeSave($args)
     {
         $this->created = Zend_Date::now()->toString('yyyy-MM-dd HH:mm:ss');
 
